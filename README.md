@@ -68,7 +68,7 @@ The polar plot compares the observed sea ice edge with both models:
 
 The notebook generates `ice_animation_both_methods.gif`. Because the original GIF can exceed GitHub's browser-upload limit, a smaller version can be published as `ice_animation_small.gif`.
 
-![Animation of observed and modeled Antarctic sea ice edge](ice_animation_small.gif)
+![Animation of observed and modeled Antarctic sea ice edge](ice_animation_both_methods.gif)
 
 If the animation does not appear, check that **`ice_animation_small.gif` is present in the same folder as `README.md`** and that its filename matches exactly, including letter case. The notebook itself still generates the original `ice_animation_both_methods.gif`; the reduced file is produced separately.
 
