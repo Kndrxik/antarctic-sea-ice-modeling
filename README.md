@@ -33,9 +33,12 @@ Output: `minimal_ice_extent.png`
 
 An independent linear regression model is fitted for every longitude, using a linear time trend and annual sine/cosine terms:
 
-\[
-\widehat{\mathrm{Lat}}_i(t) = a_{0,i} + a_{1,i}t + a_{2,i}\sin\left(\frac{2\pi t}{365.25}\right) + a_{3,i}\cos\left(\frac{2\pi t}{365.25}\right)
-\]
+$$
+\widehat{\mathrm{Lat}}_i(t) =
+a_{0,i} + a_{1,i}t +
+a_{2,i}\sin\left(\frac{2\pi t}{365.25}\right) +
+a_{3,i}\cos\left(\frac{2\pi t}{365.25}\right)
+$$
 
 Here, \(t\) is the number of days since the first date in the dataset. Models are fitted only on available measurements at their respective longitudes.
 
