@@ -1,151 +1,138 @@
-# Antarctic Sea Ice Edge Modeling
+# Antarctic Sea Ice Modeling
 
-Analysis, mathematical modeling, and visualization of Antarctic sea ice edge changes over time using daily observations at 360 longitudes.
+Analysis and mathematical modeling of the Antarctic sea ice edge using daily measurements at 360 longitudes. The project compares longitude-specific Fourier regressions with a global gradient boosting model and visualizes the results as polar contours.
 
-## Project Overview
+## Project overview
 
-The project examines the position of the Antarctic sea ice edge over time. Its main goal is to describe the ice edge at individual longitudes, build a global model combining spatial and temporal information, and compare the modeled contours with observations.
+The notebook addresses four parts of the course assignment:
 
-The analysis is implemented in Python in a Jupyter notebook and covers four parts:
-
-1. Identifying and visualizing the minimum observed sea ice extent at each longitude.
-2. Fitting a separate time-dependent model for each of the 360 longitudes.
-3. Building a single global model that captures spatial and temporal variation.
-4. Animating and comparing the observed ice edge with both sets of predictions.
+1. Draw the minimum observed ice-edge latitude for each longitude.
+2. Fit a separate time-dependent model at each of the 360 longitudes, accounting for missing observations.
+3. Model the ice-edge position using all available observations in a single global model.
+4. Compare observed and modeled contours in an animation.
 
 ## Dataset
 
-The input file is `daily_ice_edge.csv`, supplied for the course project. It contains a `Date` column and columns named `longitude_0E` through `longitude_359E`. The longitude columns hold latitude values describing the sea ice edge for the corresponding date and longitude.
+The source data are provided in `daily_ice_edge.csv`, with a `Date` column and one latitude column per longitude, from `longitude_0E` to `longitude_359E`. Missing entries are omitted from model fitting.
 
-Some observations are missing. The notebook excludes missing latitude values when fitting models and evaluating their fit.
+**Important:** The original notebook reads `daily_ice_edge.csv`, not a ZIP file. If you uploaded a compressed archive named `daily_ice_edge.zip` to avoid GitHub's 25 MB browser-upload limit, extract its CSV into the same directory as `Projekt_wersja2.ipynb` before running the notebook:
 
-**The input dataset is not included in this repository package.** Place `daily_ice_edge.csv` next to the notebook before running it. Check that you have permission to publish the course dataset before adding it to a public GitHub repository.
+```python
+import zipfile
+
+with zipfile.ZipFile('daily_ice_edge.zip') as archive:
+    archive.extract('daily_ice_edge.csv', '.')
+```
+
+If you already have `daily_ice_edge.csv` in the notebook directory, no extraction is necessary. The dataset was supplied as part of the course; verify its redistribution permissions before publishing it in a public repository.
 
 ## Methodology
 
 ### 1. Minimum sea ice edge
 
-For each longitude, the notebook selects the minimum recorded latitude and plots the resulting closed contour on a polar chart. This provides an overview of the southernmost observed ice-edge positions in the available series.
+For each longitude, the notebook finds the minimum available latitude and plots the resulting contour in polar coordinates.
 
 Output: `minimal_ice_extent.png`
 
 ### 2. Local Fourier models
 
-An independent linear regression model is fitted for every longitude, using a linear time trend and annual sine/cosine terms:
+An independent linear regression model is fitted to each longitude using a linear time trend and annual seasonal terms:
 
 $$
 \widehat{\mathrm{Lat}}_i(t) = a_{0,i} + a_{1,i}t + a_{2,i}\sin\left(\frac{2\pi t}{365.25}\right) + a_{3,i}\cos\left(\frac{2\pi t}{365.25}\right)
 $$
 
-Here, $t$ is the number of days since the first date in the dataset. Models are fitted only on available measurements at their respective longitudes.
+Here, $t$ is the number of days since the first available date. Each model uses only non-missing observations at its longitude.
 
 Outputs: `ice_model_parameters.csv`, `modeled_daily_ice_edge.csv`
 
 ### 3. Global gradient boosting model
 
-A `HistGradientBoostingRegressor` from scikit-learn is fitted to all available longitude–date–latitude observations. The predictor set includes:
+The notebook trains a `HistGradientBoostingRegressor` on all available date–longitude–latitude observations. Features consist of elapsed time, annual sine/cosine terms, longitude sine/cosine harmonics up to order 8, and interactions between longitude and seasonal terms.
 
-- Time in days and annual sine/cosine terms.
-- Longitude represented by sine and cosine harmonics (orders 1–8).
-- Interactions between the longitude harmonics and seasonal terms.
+The target is ice-edge latitude, modeled as:
 
-The model estimates latitude as a nonlinear function of longitude and time, $\widehat{\mathrm{Lat}} = f(\mathrm{Lon}, t)$. Latitude is the **predicted output**, not an input feature.
+$$
+\widehat{\mathrm{Lat}} = f(\mathrm{Lon}, t)
+$$
 
-### 4. Comparison and animation
+Latitude is the predicted value, **not** an input feature.
 
-The notebook creates a polar animation showing three contours:
+## Animation
 
-- Observed sea ice edge.
-- Local Fourier model predictions.
-- Global gradient boosting model predictions.
+The polar plot compares the observed sea ice edge with both models:
 
-The animation takes every 10th row of the original dataset and exports the frames as a GIF.
+- **Blue:** observed edge
+- **Red dashed:** local Fourier models
+- **Green:** global gradient boosting model
 
-Output: `ice_animation_both_methods.gif`
+The notebook generates `ice_animation_both_methods.gif`. Because the original GIF can exceed GitHub's browser-upload limit, a smaller version can be published as `ice_animation_small.gif`.
 
-#### Animation preview
+![Animation of observed and modeled Antarctic sea ice edge](ice_animation_small.gif)
 
-Below is a frame comparing the observed ice edge with the predictions of the two models:
+If the animation does not appear, check that **`ice_animation_small.gif` is present in the same folder as `README.md`** and that its filename matches exactly, including letter case. The notebook itself still generates the original `ice_animation_both_methods.gif`; the reduced file is produced separately.
 
-![Comparison of the observed Antarctic sea ice edge and both models](ice_edge_comparison_preview.png)
+## Model comparison
 
-The complete animated comparison is generated by the notebook as `ice_animation_both_methods.gif`. To display the animation directly in this README, upload that generated GIF file to the root of the repository. The Markdown image reference is already included below:
-
-![Animated comparison of observed and modeled Antarctic sea ice edge](ice_animation_both_methods.gif)
-
-## Model Comparison
-
-The following values are shown in the project notebook/supplied execution screenshot:
+The notebook reports the following metrics calculated on available observations:
 
 | Model | MAE | RMSE | R² |
 | --- | ---: | ---: | ---: |
 | Local Fourier model | 1.1866 | 1.6282 | 0.8448 |
 | Global gradient boosting model | 0.7692 | 1.0569 | 0.9346 |
 
-MAE and RMSE measure errors in **latitude degrees**, while R² measures goodness of fit. The global model has lower errors and a higher R² on the evaluated observations.
-
-**Important:** These metrics are calculated on observations used during model fitting. No separate test set or time-based validation is implemented in the current notebook, so the results should not be interpreted as performance on unseen dates.
+MAE and RMSE are in latitude degrees. The global model achieves a better fit by these metrics. **These are in-sample results**, not independent test-set results; the notebook does not implement time-based validation on unseen dates.
 
 Output: `comparison_metrics.csv`
 
-## Repository Structure
+## Files
 
-```text
-antarctic-ice-edge-modeling/
-├── Projekt_wersja2.ipynb        # Main analysis and modeling notebook
-├── README.md                   # Project documentation
-├── ice_edge_comparison_preview.png  # Static comparison preview
-├── requirements.txt            # Python dependencies
-└── .gitignore                  # Local/Jupyter files to exclude
+| File | Purpose |
+| --- | --- |
+| `Projekt_wersja2.ipynb` | Complete analysis, models, visualization, and evaluation |
+| `daily_ice_edge.csv` or `daily_ice_edge.zip` | Original daily measurements (CSV or compressed distribution) |
+| `minimal_ice_extent.png` | Minimum observed ice-edge contour |
+| `ice_model_parameters.csv` | Fitted coefficients of local Fourier regressions |
+| `modeled_daily_ice_edge.csv` | Local-model latitude estimates |
+| `comparison_metrics.csv` | Model-fit error metrics |
+| `ice_animation_small.gif` | Reduced animation for GitHub README |
+| `ice_animation_both_methods.gif` | Original animation generated by the notebook (may be too large to upload through the browser) |
+| `requirements.txt` | Python dependencies, if included |
+
+The notebook generates the listed plots, predictions and metrics. Some outputs may need to be generated locally rather than downloaded from the repository.
+
+## Running the project
+
+Clone or download this repository:
+
+```bash
+git clone https://github.com/Kndrxik/antarctic-sea-ice-modeling.git
+cd antarctic-sea-ice-modeling
 ```
 
-Add `daily_ice_edge.csv` to the same directory before running the notebook. Running all notebook cells generates these files **in the current working directory**:
+If `requirements.txt` is included, install dependencies with:
 
-```text
-minimal_ice_extent.png
-ice_model_parameters.csv
-modeled_daily_ice_edge.csv
-ice_animation_both_methods.gif
-comparison_metrics.csv
+```bash
+python -m pip install -r requirements.txt
 ```
 
-A static preview is included in this package. The animated GIF and the other generated outputs were not provided as standalone files. To make the animated image render above, upload `ice_animation_both_methods.gif` from JupyterLab into the same GitHub repository directory as `README.md`.
+Otherwise, install Python packages used by the notebook (`numpy`, `pandas`, `matplotlib`, `scikit-learn`, `Pillow`, and `jupyterlab`).
 
-## How to Run
+Ensure that `daily_ice_edge.csv` is in the same working directory as the notebook (extract it from `daily_ice_edge.zip` if necessary), open `Projekt_wersja2.ipynb` in JupyterLab, and run the cells from top to bottom.
 
-1. Download or clone the repository.
-2. Place `daily_ice_edge.csv` in the repository directory.
-3. Install the required packages:
-
-   ```bash
-   python -m pip install -r requirements.txt
-   ```
-
-4. Start JupyterLab from the repository directory:
-
-   ```bash
-   jupyter lab
-   ```
-
-5. Open `Projekt_wersja2.ipynb` and run the cells from top to bottom.
-
-Creating the GIF may take some time depending on the size of the input data and your computer.
+Generating the full animation may take some time, depending on the machine and dataset.
 
 ## Technologies
 
-- Python
-- Pandas and NumPy
-- Matplotlib and Pillow
-- scikit-learn
-- JupyterLab
+Python · Pandas · NumPy · Matplotlib · scikit-learn · Pillow · JupyterLab
 
 ## Limitations
 
-- Missing latitude observations are excluded during fitting; their meaning is not inferred automatically.
-- Both models are evaluated on training observations, without a time-based holdout set.
-- The local model assumes a linear trend and a single annual seasonal harmonic.
-- The global model predicts ice-edge latitude from longitude and time; it does not directly calculate total ice-covered area.
+- Missing observations are skipped during fitting.
+- Model evaluation uses the same observations as training, without a chronological holdout set.
+- The local approach uses one annual harmonic plus a linear time trend.
+- The global approach predicts latitude from longitude and time; it does not directly estimate total sea-ice area.
 
-## Project Context
+## Project context
 
 Academic course project on Antarctic sea ice edge modeling and visualization.
