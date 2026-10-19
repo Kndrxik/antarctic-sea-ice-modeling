@@ -15,7 +15,7 @@ The notebook addresses four parts of the course assignment:
 
 The source data are provided in `daily_ice_edge.csv`, with a `Date` column and one latitude column per longitude, from `longitude_0E` to `longitude_359E`. Missing entries are omitted from model fitting.
 
-**Important:** The original notebook reads `daily_ice_edge.csv`, not a ZIP file. If you uploaded a compressed archive named `daily_ice_edge.zip` to avoid GitHub's 25 MB browser-upload limit, extract its CSV into the same directory as `Projekt_wersja2.ipynb` before running the notebook:
+**Important:** The original notebook reads `daily_ice_edge.csv`, not a ZIP file. If you uploaded a compressed archive named `daily_ice_edge.zip` to avoid GitHub's 25 MB browser-upload limit, extract its CSV into the same directory as `project.ipynb` before running the notebook:
 
 ```python
 import zipfile
